@@ -1,8 +1,8 @@
 //
-//modified by:
-//date:
+//modified by: Avery Raines
+//date: September 12th, 2019
 //
-//3350 Spring 2019 Lab-1
+//3350 Fall 2019 Lab-1
 //This program demonstrates the use of OpenGL and XWindows
 //
 //Assignment is to modify this program.
@@ -39,6 +39,7 @@ using namespace std;
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <GL/glx.h>
+#include "fonts.h"
 
 const int MAX_PARTICLES = 2000000;
 const float GRAVITY     = 0.1;
@@ -207,6 +208,8 @@ void init_opengl(void)
 	glOrtho(0, g.xres, 0, g.yres, -1, 1);
 	//Set the screen background color
 	glClearColor(0.1, 0.1, 0.1, 1.0);
+	glEnable(GL_TEXTURE_2D); //For Fonts
+	initialize_fonts(); //For Fonts
 }
 
 void makeParticle(int x, int y)
@@ -321,6 +324,12 @@ void render()
 	//Draw shapes...
 	//draw the box
 	Shape *s;
+	//Draws a rectangle used to write text on
+	Rect r;
+	//Coordinates of rectangle
+	r.bot = 195;
+	r.left = 450;
+	r.center = 400;
 	glColor3ub(90,140,90);
 	s = &g.box;
 	glPushMatrix();
@@ -356,8 +365,8 @@ void render()
 	}
 	//
 	//Draw your 2D text here
-
-
+	
+	ggprint8b(&r, 16, 0x00ffff00, "Requirements");
 
 
 
