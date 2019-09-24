@@ -1,6 +1,6 @@
-//
-//modified by: Avery Raines
-//date: September 12th, 2019
+//Original Author: Gordon Griesel
+//Modified by: Avery Raines
+//Modified Date: Beginning of Semester thru Sep 23rd, 2019
 //
 //3350 Fall 2019 Lab-1
 //This program demonstrates the use of OpenGL and XWindows
@@ -41,8 +41,9 @@ using namespace std;
 #include <GL/glx.h>
 #include "fonts.h"
 
-const int MAX_PARTICLES = 2000000;
-const float GRAVITY     = 0.1;
+const int TOTAL_BOXES = 5; //Can be modified to make more boxes if needed
+const int MAX_PARTICLES = 20000;
+const float GRAVITY = 1.0;
 
 //some structures
 
@@ -64,7 +65,7 @@ struct Particle {
 class Global {
 public:
 	int xres, yres;
-	Shape box;
+	Shape box[TOTAL_BOXES];
 	Particle particle[MAX_PARTICLES];
 	int n;
 	Global();
@@ -121,14 +122,30 @@ int main()
 //-----------------------------------------------------------------------------
 Global::Global()
 {
-	xres = 800;
+	xres = 900;
 	yres = 600;
 	//define a box shape
-	box.width = 100;
-	box.height = 10;
-	box.center.x = 120 + 5*65;
-	box.center.y = 500 - 5*60;
-	n = 0;
+	//Array of boxes
+    for(int i=0; i < TOTAL_BOXES; i++) {
+    box[i].width = 100;
+	box[i].height = 10;
+    }
+	//box 1 placement
+	box[0].center.x = 150;
+	box[0].center.y = 500;
+    //box 2 placement
+	box[1].center.x = 250;
+	box[1].center.y = 400;
+	//box 3 placement
+	box[2].center.x = 350;
+	box[2].center.y = 300;
+    //box 4 placement
+	box[3].center.x = 450;
+	box[3].center.y = 200;
+    //box 5 placement
+	box[4].center.x = 550;
+	box[4].center.y = 100;
+    n = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -174,7 +191,7 @@ void X11_wrapper::set_title()
 {
 	//Set the window title bar.
 	XMapWindow(dpy, win);
-	XStoreName(dpy, win, "3350 Lab1");
+	XStoreName(dpy, win, "3350 Lab 1 - Waterfall Model");
 }
 
 bool X11_wrapper::getXPending()
@@ -208,8 +225,9 @@ void init_opengl(void)
 	glOrtho(0, g.xres, 0, g.yres, -1, 1);
 	//Set the screen background color
 	glClearColor(0.1, 0.1, 0.1, 1.0);
-	glEnable(GL_TEXTURE_2D); //For Fonts
-	initialize_fonts(); //For Fonts
+    //Allowing the fonts
+    glEnable(GL_TEXTURE_2D);
+    initialize_fonts();
 }
 
 void makeParticle(int x, int y)
@@ -223,8 +241,8 @@ void makeParticle(int x, int y)
 	Particle *p = &g.particle[g.n];
 	p->s.center.x = x;
 	p->s.center.y = y;
-	p->velocity.y =  ((double)rand() / (double)RAND_MAX) -0.5;
-	p->velocity.x =  ((double)rand() / (double)RAND_MAX) -0.5 + 0.25;
+	p->velocity.y = ((double)rand()/(double)RAND_MAX) -0.5;
+	p->velocity.x = 4.0; //((double)rand()/(double)RAND_MAX) -0.5 + 0.25; 
 	++g.n;
 }
 
@@ -263,13 +281,14 @@ void check_mouse(XEvent *e)
 			savey = e->xbutton.y;
 			//Code placed here will execute whenever the mouse moves.
 			int y = g.yres - e->xbutton.y;
-			for (int i=0; i<10; i++){
-			makeParticle(e->xbutton.x, y);
+			for(int i=0; i<10;i++){
+			    makeParticle(e->xbutton.x, y);
+			}
 
 		}
 	}
 }
-}
+
 int check_keys(XEvent *e)
 {
 	if (e->type != KeyPress && e->type != KeyRelease)
@@ -295,66 +314,62 @@ void movement()
 {
 	if (g.n <= 0)
 		return;
-	for(int i=0; i<g.n; i++){
-		Particle *p = &g.particle[i];
-		p->s.center.x += p->velocity.x;
-		p->s.center.y += p->velocity.y;
-		p->velocity.y -= GRAVITY;
-
-		//check for collision with shapes...
-		Shape *s = &g.box;
-		if(p->s.center.y < s->center.y + s->height && 
-			p->s.center.x > s->center.x - s->width &&
-			p->s.center.x < s->center.x + s->width)
-	    		p->velocity.y = -(p->velocity.y*0.8);
-
-
-
-		//check for off-screen
-		if (p->s.center.y < 0.0 || p->s.center.y > 600) {
-	    		g.particle[i] = g.particle[g.n-1];
-			--g.n;
+	for (int i=0; i<g.n;i++){
+	Particle *p = &g.particle[i];
+	p->s.center.x += p->velocity.x;
+	p->s.center.y += p->velocity.y;
+	p->velocity.y -= GRAVITY;
+	//check for collision with shapes...
+	//Shape *s;
+    for (int i=0; i < TOTAL_BOXES; i++) {
+	Shape *s= &g.box[i];
+	if(p->s.center.y < s->center.y + s->height &&
+       p->s.center.y > s->center.y - s->height &&
+		p->s.center.x > s->center.x - s->width &&
+		p->s.center.x < s->center.x + s->width) {
+			p->s.center.y = s->center.y + s->height;
+	        p->velocity.y = -(p->velocity.y*0.3);
 		}
+    }
+	//check for off-screen
+	if (p->s.center.y < 0.0) {
+			g.particle[i]= g.particle[g.n-1];
+			--g.n;
 	}
+}
 }
 
 void render()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
 	//Draw shapes...
-	//draw the box
+	//draw the boxes
 	Shape *s;
-	//Draws a rectangle used to write text on
-	Rect r;
-	//Coordinates of rectangle
-	r.bot = 195;
-	r.left = 450;
-	r.center = 400;
-	glColor3ub(90,140,90);
-	s = &g.box;
+	float w, h;
+	for (int i=0; i < TOTAL_BOXES; i++){
+    glColor3ub(90,140,90);
+	s = &g.box[i];
 	glPushMatrix();
 	glTranslatef(s->center.x, s->center.y, s->center.z);
-	float w, h;
 	w = s->width;
 	h = s->height;
 	glBegin(GL_QUADS);
-		glVertex2i(-w, -h);
-		glVertex2i(-w,  h);
-		glVertex2i( w,  h);
 		glVertex2i( w, -h);
+		glVertex2i( w,  h);
+		glVertex2i(-w,  h);
+		glVertex2i(-w, -h);
 	glEnd();
 	glPopMatrix();
-	//
-	//Draw particles here
-	//if (g.n > 0) {
-
+    }
+	
+    //Draw particles here
+    
 	for(int i=0; i<g.n; i++){
-
 		//There is at least one particle to draw.
 		glPushMatrix();
-		glColor3ub(150,160,220);
+		glColor3ub(0,60,240);
 		Vec *c = &g.particle[i].s.center;
-		w = h = 2;
+		w = h = 2.2;
 		glBegin(GL_QUADS);
 			glVertex2i(c->x-w, c->y-h);
 			glVertex2i(c->x-w, c->y+h);
@@ -365,15 +380,36 @@ void render()
 	}
 	//
 	//Draw your 2D text here
-	
-	ggprint8b(&r, 16, 0x00ffff00, "Requirements");
+	//Variable created to eaisly use the same color over and over
+    const int blue = 0x00ffff;
 
+	//Array of rectangles with the same position as our boxes so we can
+	//write text on them.
+    Rect re[5];
+    re[0].bot = 500 - 5;
+    re[0].left = 150 - 33;
+    re[0].center = 0; 
+    ggprint8b(&re[0], 16, blue, "Requirements");    
+    
+    re[1].bot = 400 - 5;
+    re[1].left = 250 - 17;
+    re[1].center = 0; 
+    ggprint8b(&re[1], 16, blue, "Design");    
 
+    re[2].bot = 300 - 5;
+    re[2].left = 350 - 33;
+    re[2].center = 0; 
+    ggprint8b(&re[2], 16, blue, "Implementation");    
 
+    re[3].bot = 200 - 5;
+    re[3].left = 450 - 33;
+    re[3].center = 0; 
+    ggprint8b(&re[3], 16, blue, "Testing");    
 
-
-
-
+    re[4].bot = 100 - 5;
+    re[4].left = 550 - 33;
+    re[4].center = 0; 
+    ggprint8b(&re[4], 16, blue, "Maintenance");    
 }
 
 
